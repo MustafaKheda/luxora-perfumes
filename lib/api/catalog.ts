@@ -6,6 +6,7 @@ import {
   eq,
   ilike,
   inArray,
+  isNull,
   or,
   sql,
   type SQL,
@@ -29,6 +30,7 @@ export type ProductQuery = {
   tag?: string | null;
   bestSeller?: string | null;
   featured?: string | null;
+  parentsOnly?: string | null;
   sort?: string | null;
   page?: string | null;
   limit?: string | null;
@@ -42,6 +44,14 @@ type ProductWithRelations = ProductRow & {
   category: CategoryRow;
   collections: CollectionRow[];
 };
+
+export async function getHomeBestSellers() {
+  return getProducts({
+    bestSeller: "true",
+    limit: "2",
+    parentsOnly: "true",
+  });
+}
 
 export async function getProducts(query: ProductQuery) {
   const page = parsePositiveInt(query.page, 1);
@@ -224,6 +234,10 @@ async function buildProductWhere(query: ProductQuery) {
 
   if (query.featured === "true") {
     filters.push(eq(products.isFeatured, true));
+  }
+
+  if (query.parentsOnly !== "false") {
+    filters.push(isNull(products.parentProductId));
   }
 
   if (query.search) {

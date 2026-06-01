@@ -96,18 +96,30 @@ export const products = pgTable(
   "products",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    modelNo: text("model_no"),
     name: text("name").notNull(),
     slug: text("slug").notNull(),
     description: text("description").notNull(),
+    detailedDescription: text("detailed_description"),
+    productDetailHtml: text("product_detail_html"),
+    seoUrl: text("seo_url"),
+    seoTitle: text("seo_title"),
+    seoDescription: text("seo_description"),
+    seoKeywords: text("seo_keywords"),
+    googleShoppingDescription: text("google_shopping_description"),
     image: text("image").notNull(),
     imagePublicId: text("image_public_id"),
+    purchasePrice: numeric("purchase_price", { precision: 10, scale: 2 }),
     price: numeric("price", { precision: 10, scale: 2 }).notNull(),
     stock: integer("stock").notNull().default(0),
+    brand: text("brand"),
     tag: productTagEnum("tag"),
     notes: text("notes").array().notNull().default(sql`ARRAY[]::text[]`),
+    scentOptions: jsonb("scent_options"),
     isBestSeller: boolean("is_best_seller").notNull().default(false),
     isFeatured: boolean("is_featured").notNull().default(false),
     isActive: boolean("is_active").notNull().default(true),
+    parentProductId: uuid("parent_product_id"),
     categoryId: uuid("category_id")
       .notNull()
       .references(() => categories.id),
@@ -119,6 +131,7 @@ export const products = pgTable(
     index("products_is_active_idx").on(table.isActive),
     index("products_is_best_seller_idx").on(table.isBestSeller),
     index("products_is_featured_idx").on(table.isFeatured),
+    index("products_parent_product_id_idx").on(table.parentProductId),
   ],
 );
 
@@ -251,6 +264,14 @@ export const productsRelations = relations(products, ({ one, many }) => ({
   category: one(categories, {
     fields: [products.categoryId],
     references: [categories.id],
+  }),
+  parentProduct: one(products, {
+    fields: [products.parentProductId],
+    references: [products.id],
+    relationName: "productVariants",
+  }),
+  variants: many(products, {
+    relationName: "productVariants",
   }),
   collections: many(productCollections),
   cartItems: many(cartItems),
